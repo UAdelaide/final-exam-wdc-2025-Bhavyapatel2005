@@ -1,101 +1,53 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
+
 const app = express();
 const PORT = 8080;
 
-let connection;
+let db;
 
-// Connect to MySQL
-async function initDB() {
-  connection = await mysql.createConnection({
+async function connectDB() {
+  db = await mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '', // adjust if needed
     database: 'DogWalkService'
   });
-  console.log('Connected to MySQL');
 }
 
-// Seed test data
-async function seedData() {
+// Insert sample records on startup (if needed)
+async function insertTestData() {
   try {
-    // Clear and reset the data
-    await connection.query('DELETE FROM WalkRatings');
-    await connection.query('DELETE FROM WalkApplications');
-    await connection.query('DELETE FROM WalkRequests');
-    await connection.query('DELETE FROM Dogs');
-    await connection.query('DELETE FROM Users');
-
-    // Insert Users
-    await connection.query(`
-      INSERT INTO Users (username, email, password_hash, role) VALUES
-      ('alice123', 'alice@example.com', 'pass', 'owner'),
-      ('carol123', 'carol@example.com', 'pass', 'owner'),
-      ('bobwalker', 'bob@example.com', 'pass', 'walker'),
-      ('newwalker', 'new@example.com', 'pass', 'walker')
-    `);
-
-    // Insert Dogs
-    await connection.query(`
-      INSERT INTO Dogs (owner_id, name, size) VALUES
-      ((SELECT user_id FROM Users WHERE username='alice123'), 'Max', 'medium'),
-      ((SELECT user_id FROM Users WHERE username='carol123'), 'Bella', 'small')
-    `);
-
-    // Insert WalkRequests
-    await connection.query(`
-      INSERT INTO WalkRequests (dog_id, requested_time, duration_minutes, location, status) VALUES
-      ((SELECT dog_id FROM Dogs WHERE name='Max'), '2025-06-10 08:00:00', 30, 'Parklands', 'open')
-    `);
-
-    // Insert WalkApplications
-    await connection.query(`
-      INSERT INTO WalkApplications (request_id, walker_id, status) VALUES
-      (1, (SELECT user_id FROM Users WHERE username='bobwalker'), 'accepted')
-    `);
-
-    // Insert WalkRatings
-    await connection.query(`
-      INSERT INTO WalkRatings (request_id, walker_id, owner_id, rating, comments) VALUES
-      (1,
-       (SELECT user_id FROM Users WHERE username='bobwalker'),
-       (SELECT user_id FROM Users WHERE username='alice123'),
-       5,
-       'Great walk!')
-    `);
+    await db.execute(`INSERT IGNORE INTO Users (user_id, username, email, password_hash, role) VALUES
+      (1, 'alice123', 'alice@example.com', 'hashed123', 'owner'),
+      (2, 'bobwalker', 'bob@example.com', 'hashed456', 'walker')`);
+    await db.execute(`INSERT IGNORE INTO Dogs (dog_id, owner_id, name, size) VALUES
+      (1, 1, 'Max', 'medium')`);
+    await db.execute(`INSERT IGNORE INTO WalkRequests (request_id, dog_id, requested_time, duration_minutes, location, status) VALUES
+      (1, 1, '2025-06-10 08:00:00', 30, 'Parklands', 'open')`);
   } catch (err) {
-    console.error('Error seeding data:', err);
-    throw err;
+    console.error("Test data insert error:", err);
   }
 }
 
-// API Routes
-
-// 1. /api/dogs
+// Route: /api/dogs
 app.get('/api/dogs', async (req, res) => {
   try {
-    const [rows] = await connection.query(`
+    const [rows] = await db.execute(`
       SELECT d.name AS dog_name, d.size, u.username AS owner_username
       FROM Dogs d
       JOIN Users u ON d.owner_id = u.user_id
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch dogs' });
+    res.status(500).json({ error: "Failed to retrieve dogs." });
   }
 });
 
-// 2. /api/walkrequests/open
+// Route: /api/walkrequests/open
 app.get('/api/walkrequests/open', async (req, res) => {
   try {
-    const [rows] = await connection.query(`
-      SELECT
-        wr.request_id,
-        d.name AS dog_name,
-        wr.requested_time,
-        wr.duration_minutes,
-        wr.location,
-        u.username AS owner_username
+    const [rows] = await db.execute(`
+      SELECT wr.request_id, d.name AS dog_name, wr.requested_time, wr.duration_minutes, wr.location, u.username AS owner_username
       FROM WalkRequests wr
       JOIN Dogs d ON wr.dog_id = d.dog_id
       JOIN Users u ON d.owner_id = u.user_id
@@ -103,39 +55,38 @@ app.get('/api/walkrequests/open', async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch open walk requests' });
+    res.status(500).json({ error: "Failed to retrieve open walk requests." });
   }
 });
 
-// 3. /api/walkers/summary
+// Route: /api/walkers/summary
 app.get('/api/walkers/summary', async (req, res) => {
   try {
-    const [rows] = await connection.query(`
-      SELECT
-        u.username AS walker_username,
-        COUNT(r.rating_id) AS total_ratings,
-        ROUND(AVG(r.rating), 1) AS average_rating,
-        COUNT(DISTINCT a.request_id) AS completed_walks
+    const [rows] = await db.execute(`
+      SELECT u.username AS walker_username,
+        COUNT(wr.request_id) AS completed_walks,
+        COUNT(wr2.rating_id) AS total_ratings,
+        ROUND(AVG(wr2.rating), 1) AS average_rating
       FROM Users u
-      LEFT JOIN WalkApplications a ON a.walker_id = u.user_id AND a.status = 'accepted'
-      LEFT JOIN WalkRatings r ON r.walker_id = u.user_id
+      LEFT JOIN WalkApplications wa ON u.user_id = wa.walker_id
+      LEFT JOIN WalkRequests wr ON wa.request_id = wr.request_id AND wr.status = 'completed'
+      LEFT JOIN WalkRatings wr2 ON wa.request_id = wr2.request_id
       WHERE u.role = 'walker'
-      GROUP BY u.user_id
+      GROUP BY u.username
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch walker summary' });
+    res.status(500).json({ error: "Failed to retrieve walker summary." });
   }
 });
 
-// Start server
 async function startServer() {
   try {
-    await initDB();
-    await seedData();
-    app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+    await connectDB();
+    await insertTestData();
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (err) {
-    console.error('Failed to start server:', err);
+    console.error("Startup error:", err);
   }
 }
 
