@@ -8,7 +8,7 @@ const dbConfig = {
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'dogwalks'
+  database: 'dogwalks.sql'
 };
 
 let connection;
