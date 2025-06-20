@@ -4,27 +4,24 @@ const mysql = require('mysql2/promise');
 const app = express();
 const PORT = 8080;
 
-// Configure MySQL connection pool
+// MySQL connection setup
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: '',  // <- set your password if needed
-  database: 'DogWalkService',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  password: '', // add your password if any
+  database: 'DogWalkService' // make sure this matches your DB
 });
 
-// Seed database with sample records (only once)
+// Seed database with test data
 async function seedDatabase() {
   try {
     // Insert users
     await pool.query(`
       INSERT IGNORE INTO Users (user_id, username, email, password_hash, role)
       VALUES
-        (1, 'alice123', 'alice@example.com', 'password1', 'owner'),
-        (2, 'bobwalker', 'bob@example.com', 'password2', 'walker'),
-        (3, 'carol123', 'carol@example.com', 'password3', 'owner');
+        (1, 'alice123', 'alice@example.com', 'hashed123', 'owner'),
+        (2, 'bobwalker', 'bob@example.com', 'hashed456', 'walker'),
+        (3, 'carol123', 'carol@example.com', 'hashed789', 'owner');
     `);
 
     // Insert dogs
@@ -40,34 +37,27 @@ async function seedDatabase() {
       INSERT IGNORE INTO WalkRequests (request_id, dog_id, requested_time, duration_minutes, location, status)
       VALUES
         (1, 1, '2025-06-10 08:00:00', 30, 'Parklands', 'open'),
-        (2, 2, '2025-06-10 09:30:00', 45, 'Beachside Ave', 'completed');
+        (2, 2, '2025-06-10 09:30:00', 45, 'Beachside Ave', 'accepted');
     `);
 
-    // Insert applications
+    // Insert completed walks and ratings
     await pool.query(`
       INSERT IGNORE INTO WalkApplications (application_id, request_id, walker_id, status)
       VALUES
-        (1, 2, 2, 'completed');
-    `);
+        (1, 1, 2, 'completed');
 
-    // Insert ratings
-    await pool.query(`
       INSERT IGNORE INTO WalkRatings (rating_id, walk_application_id, rating, comment)
       VALUES
-        (1, 1, 5, 'Great service!'),
-        (2, 1, 4, 'Very good walk');
+        (1, 1, 5, 'Great walk!');
     `);
 
-    console.log('✅ Database seeded with test data');
-  } catch (err) {
-    console.error('❌ Failed to seed database:', err.message);
+    console.log('Sample data inserted');
+  } catch (error) {
+    console.error('Error seeding database:', error.message);
   }
 }
 
-// ---------------------- ROUTES -------------------------
-
-// GET /api/dogs
-// Returns all dogs with their size and owner username
+// Route: /api/dogs
 app.get('/api/dogs', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -77,12 +67,11 @@ app.get('/api/dogs', async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch dog list' });
+    res.status(500).json({ error: 'Failed to retrieve dogs' });
   }
 });
 
-// GET /api/walkrequests/open
-// Returns all open walk requests with dog name and owner
+// Route: /api/walkrequests/open
 app.get('/api/walkrequests/open', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -94,12 +83,11 @@ app.get('/api/walkrequests/open', async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch open walk requests' });
+    res.status(500).json({ error: 'Failed to retrieve open walk requests' });
   }
 });
 
-// GET /api/walkers/summary
-// Returns a summary of walkers: username, total ratings, avg rating, and completed walks
+// Route: /api/walkers/summary
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -112,19 +100,16 @@ app.get('/api/walkers/summary', async (req, res) => {
       LEFT JOIN WalkApplications wa ON u.user_id = wa.walker_id AND wa.status = 'completed'
       LEFT JOIN WalkRatings r ON wa.application_id = r.walk_application_id
       WHERE u.role = 'walker'
-      GROUP BY u.user_id;
+      GROUP BY u.username;
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch walker summaries' });
+    res.status(500).json({ error: 'Failed to retrieve walker summary' });
   }
 });
 
-// ---------------------- STARTUP -------------------------
-
-// Start server only after seeding data
 seedDatabase().then(() => {
   app.listen(PORT, () => {
-    console.log(`🚀 Server is running at http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
   });
 });
