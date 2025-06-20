@@ -4,24 +4,27 @@ const mysql = require('mysql2/promise');
 const app = express();
 const PORT = 8080;
 
-// MySQL connection setup
+// Configure MySQL connection pool
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: '', // add your password if any
-  database: 'DogWalkService' // make sure this matches your DB
+  password: '',  // <- set your password if needed
+  database: 'DogWalkService',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-// Seed database with test data
+// Seed database with sample records (only once)
 async function seedDatabase() {
   try {
     // Insert users
     await pool.query(`
       INSERT IGNORE INTO Users (user_id, username, email, password_hash, role)
       VALUES
-        (1, 'alice123', 'alice@example.com', 'hashed123', 'owner'),
-        (2, 'bobwalker', 'bob@example.com', 'hashed456', 'walker'),
-        (3, 'carol123', 'carol@example.com', 'hashed789', 'owner');
+        (1, 'alice123', 'alice@example.com', 'password1', 'owner'),
+        (2, 'bobwalker', 'bob@example.com', 'password2', 'walker'),
+        (3, 'carol123', 'carol@example.com', 'password3', 'owner');
     `);
 
     // Insert dogs
@@ -37,27 +40,34 @@ async function seedDatabase() {
       INSERT IGNORE INTO WalkRequests (request_id, dog_id, requested_time, duration_minutes, location, status)
       VALUES
         (1, 1, '2025-06-10 08:00:00', 30, 'Parklands', 'open'),
-        (2, 2, '2025-06-10 09:30:00', 45, 'Beachside Ave', 'accepted');
+        (2, 2, '2025-06-10 09:30:00', 45, 'Beachside Ave', 'completed');
     `);
 
-    // Insert completed walks and ratings
+    // Insert applications
     await pool.query(`
       INSERT IGNORE INTO WalkApplications (application_id, request_id, walker_id, status)
       VALUES
-        (1, 1, 2, 'completed');
-
-      INSERT IGNORE INTO WalkRatings (rating_id, walk_application_id, rating, comment)
-      VALUES
-        (1, 1, 5, 'Great walk!');
+        (1, 2, 2, 'completed');
     `);
 
-    console.log('Sample data inserted');
-  } catch (error) {
-    console.error('Error seeding database:', error.message);
+    // Insert ratings
+    await pool.query(`
+      INSERT IGNORE INTO WalkRatings (rating_id, walk_application_id, rating, comment)
+      VALUES
+        (1, 1, 5, 'Great service!'),
+        (2, 1, 4, 'Very good walk');
+    `);
+
+    console.log('✅ Database seeded with test data');
+  } catch (err) {
+    console.error('❌ Failed to seed database:', err.message);
   }
 }
 
-// Route: /api/dogs
+// ---------------------- ROUTES -------------------------
+
+// GET /api/dogs
+// Returns all dogs with their size and owner username
 app.get('/api/dogs', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -67,11 +77,12 @@ app.get('/api/dogs', async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve dogs' });
+    res.status(500).json({ error: 'Failed to fetch dog list' });
   }
 });
 
-// Route: /api/walkrequests/open
+// GET /api/walkrequests/open
+// Returns all open walk requests with dog name and owner
 app.get('/api/walkrequests/open', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -83,11 +94,12 @@ app.get('/api/walkrequests/open', async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve open walk requests' });
+    res.status(500).json({ error: 'Failed to fetch open walk requests' });
   }
 });
 
-// Route: /api/walkers/summary
+// GET /api/walkers/summary
+// Returns a summary of walkers: username, total ratings, avg rating, and completed walks
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -100,17 +112,19 @@ app.get('/api/walkers/summary', async (req, res) => {
       LEFT JOIN WalkApplications wa ON u.user_id = wa.walker_id AND wa.status = 'completed'
       LEFT JOIN WalkRatings r ON wa.application_id = r.walk_application_id
       WHERE u.role = 'walker'
-      GROUP BY u.username;
+      GROUP BY u.user_id;
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve walker summary' });
+    res.status(500).json({ error: 'Failed to fetch walker summaries' });
   }
 });
 
-// Start server after seeding database
+// ---------------------- STARTUP -------------------------
+
+// Start server only after seeding data
 seedDatabase().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`🚀 Server is running at http://localhost:${PORT}`);
   });
 });
