@@ -4,12 +4,12 @@ const mysql = require('mysql2/promise');
 const app = express();
 const PORT = 8080;
 
-// MySQL connection setup
+
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: '', // add your password if any
-  database: 'DogWalkService' // make sure this matches your DB
+  password: '',
+  database: 'DogWalkService'
 });
 
 async function seedDatabase() {
