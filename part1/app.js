@@ -4,81 +4,95 @@ const mysql = require('mysql2/promise');
 const app = express();
 const PORT = 8080;
 
+// Create MySQL pool
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: '',
-  database: 'DogWalkService'
+  password: '', // or your root password
+  database: 'dogwalking',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
+// Seed database with sample data
 async function seedDatabase() {
   try {
-    await pool.query(`
-      INSERT IGNORE INTO Users (user_id, username, email, password_hash, role)
+    const conn = await pool.getConnection();
+
+    await conn.query(`DELETE FROM WalkRatings`);
+    await conn.query(`DELETE FROM WalkRequests`);
+    await conn.query(`DELETE FROM Dogs`);
+    await conn.query(`DELETE FROM Users`);
+
+    await conn.query(`
+      INSERT INTO Users (user_id, username, role)
       VALUES
-        (1, 'alice123', 'alice@example.com', 'hashed123', 'owner'),
-        (2, 'bobwalker', 'bob@example.com', 'hashed456', 'walker'),
-        (3, 'carol123', 'carol@example.com', 'hashed789', 'owner');
+        (1, 'alice123', 'owner'),
+        (2, 'carol123', 'owner'),
+        (3, 'bobwalker', 'walker'),
+        (4, 'newwalker', 'walker');
     `);
 
-    await pool.query(`
-      INSERT IGNORE INTO Dogs (dog_id, owner_id, name, size)
+    await conn.query(`
+      INSERT INTO Dogs (dog_id, dog_name, size, owner_id)
       VALUES
-        (1, 1, 'Max', 'medium'),
-        (2, 3, 'Bella', 'small');
+        (1, 'Max', 'medium', 1),
+        (2, 'Bella', 'small', 2);
     `);
 
-    await pool.query(`
-      INSERT IGNORE INTO WalkRequests (request_id, dog_id, requested_time, duration_minutes, location, status)
+    await conn.query(`
+      INSERT INTO WalkRequests (request_id, dog_id, requested_time, duration_minutes, location, status)
       VALUES
         (1, 1, '2025-06-10 08:00:00', 30, 'Parklands', 'open'),
-        (2, 2, '2025-06-10 09:30:00', 45, 'Beachside Ave', 'accepted');
+        (2, 2, '2025-06-10 09:00:00', 45, 'Beachside Ave', 'accepted');
     `);
 
-    await pool.query(`
-      INSERT IGNORE INTO WalkApplications (application_id, request_id, walker_id, status)
+    await conn.query(`
+      INSERT INTO WalkRatings (rating_id, walk_application_id, rating, comment)
       VALUES
-        (1, 1, 2, 'completed');
-
-      INSERT IGNORE INTO WalkRatings (rating_id, walk_application_id, rating, comment)
-      VALUES
-        (1, 1, 5, 'Great walk!');
+        (1, 1, 5, 'Great walk'),
+        (2, 1, 4, 'Nice and friendly');
     `);
 
-    console.log('Sample data inserted');
+    conn.release();
+    console.log('Database seeded.');
   } catch (error) {
     console.error('Error seeding database:', error.message);
   }
 }
 
+// Route: /api/dogs
 app.get('/api/dogs', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT d.name AS dog_name, d.size, u.username AS owner_username
+      SELECT d.dog_name, d.size, u.username AS owner_username
       FROM Dogs d
-      JOIN Users u ON d.owner_id = u.user_id;
+      JOIN Users u ON d.owner_id = u.user_id
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve dogs' });
+    res.status(500).json({ error: err.message });
   }
 });
 
+// Route: /api/walkrequests/open
 app.get('/api/walkrequests/open', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT wr.request_id, d.name AS dog_name, wr.requested_time, wr.duration_minutes, wr.location, u.username AS owner_username
+      SELECT wr.request_id, d.dog_name, wr.requested_time, wr.duration_minutes, wr.location, u.username AS owner_username
       FROM WalkRequests wr
       JOIN Dogs d ON wr.dog_id = d.dog_id
       JOIN Users u ON d.owner_id = u.user_id
-      WHERE wr.status = 'open';
+      WHERE wr.status = 'open'
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve open walk requests' });
+    res.status(500).json({ error: err.message });
   }
 });
 
+// Route: /api/walkers/summary
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -91,16 +105,16 @@ app.get('/api/walkers/summary', async (req, res) => {
       LEFT JOIN WalkApplications wa ON u.user_id = wa.walker_id AND wa.status = 'completed'
       LEFT JOIN WalkRatings r ON wa.application_id = r.walk_application_id
       WHERE u.role = 'walker'
-      GROUP BY u.username;
+      GROUP BY u.user_id
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve walker summary' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-seedDatabase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-  });
+// Start server and seed DB
+app.listen(PORT, async () => {
+  await seedDatabase();
+  console.log(`Server running at http://localhost:${PORT}`);
 });
