@@ -114,7 +114,7 @@ const startServer = async () => {
     console.log('Database seeded');
 
     app.listen(PORT, () => {
-      console.log,(Server running at http://localhost:${PORT});
+      console.log('Server running at http://localhost:${PORT'});
     });
   } catch (err) {
     console.error('Failed to start server:', err);
