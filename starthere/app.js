@@ -122,3 +122,21 @@ app.get('/api/walkers/summary', async (req, res) => {
       WHERE u.role = 'walker'
       GROUP BY u.user_id
     `);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch walker summary' });
+  }
+});
+
+// Start server
+async function startServer() {
+  try {
+    await initDB();
+    await seedData();
+    app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+  } catch (err) {
+    console.error('Failed to start server:', err);
+  }
+}
+
+startServer();
