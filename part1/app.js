@@ -12,10 +12,8 @@ const pool = mysql.createPool({
   database: 'DogWalkService' // make sure this matches your DB
 });
 
-// Seed database with test data
 async function seedDatabase() {
   try {
-    // Insert users
     await pool.query(`
       INSERT IGNORE INTO Users (user_id, username, email, password_hash, role)
       VALUES
@@ -24,7 +22,6 @@ async function seedDatabase() {
         (3, 'carol123', 'carol@example.com', 'hashed789', 'owner');
     `);
 
-    // Insert dogs
     await pool.query(`
       INSERT IGNORE INTO Dogs (dog_id, owner_id, name, size)
       VALUES
@@ -32,7 +29,6 @@ async function seedDatabase() {
         (2, 3, 'Bella', 'small');
     `);
 
-    // Insert walk requests
     await pool.query(`
       INSERT IGNORE INTO WalkRequests (request_id, dog_id, requested_time, duration_minutes, location, status)
       VALUES
@@ -40,7 +36,6 @@ async function seedDatabase() {
         (2, 2, '2025-06-10 09:30:00', 45, 'Beachside Ave', 'accepted');
     `);
 
-    // Insert completed walks and ratings
     await pool.query(`
       INSERT IGNORE INTO WalkApplications (application_id, request_id, walker_id, status)
       VALUES
@@ -57,7 +52,6 @@ async function seedDatabase() {
   }
 }
 
-// Route: /api/dogs
 app.get('/api/dogs', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -71,7 +65,6 @@ app.get('/api/dogs', async (req, res) => {
   }
 });
 
-// Route: /api/walkrequests/open
 app.get('/api/walkrequests/open', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -87,7 +80,6 @@ app.get('/api/walkrequests/open', async (req, res) => {
   }
 });
 
-// Route: /api/walkers/summary
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await pool.query(`
