@@ -5,19 +5,13 @@
   <title>Dog Walking Service — Dog of the Day</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
-    /* Cognitive load failure: chaotic visual style */
     h1 { font-size: 48px; color: orange; }
     h2 { font-size: 36px; color: pink; }
     p { font-size: 24px; color: cyan; font-family: cursive; }
     .btn-large { font-size: 40px; background: lime; padding: 20px; }
-    .btn-tiny { font-size: 8px; padding: 1px 3px; }
-
-    /* Accessibility fail: contrast issues + no focus style */
+    .btn-tiny { font-size: 8px; padding: 1px 3px; border: 1px solid black; }
     body { background: lightyellow; }
     button:focus { outline: none; }
-
-    /* Kinematic load fail: small click target */
-    .btn-tiny { border: 1px solid black; }
   </style>
 </head>
 <body>
@@ -25,21 +19,19 @@
     <h1>DOG WALKING SERVICE</h1>
     <h2>DOG OF THE DAY</h2>
 
-    <img :src="dogImage" alt="" width="400" /> <!-- accessibility fail: empty alt -->
+    <img :src="dogImage" alt="" width="400" />
 
     <p>Name: Sparky</p>
     <p>Breed: Ultra Rare</p>
     <p>Age: 2 years</p>
 
     <div>
-      <!-- Cognitive load fail: multiple buttons, unclear -->
-      <button class="btn-large" @click="getDog">Get Dog</button>
-      <button class="btn-large" @click="getDog">Get Another Dog</button>
-      <button class="btn-large" @click="getDog">Again</button>
-      <button class="btn-tiny" @click="getDog">Tiny</button>
+      <button type="button" class="btn-large" @click="getDog">Get Dog</button>
+      <button type="button" class="btn-large" @click="getDog">Get Another Dog</button>
+      <button type="button" class="btn-large" @click="getDog">Again</button>
+      <button type="button" class="btn-tiny" @click="getDog">Tiny</button>
     </div>
 
-    <!-- Accessibility fail: unlabeled form elements -->
     <input type="text" placeholder="Type something here" />
     <input type="checkbox" /> Check this if you agree
   </div>
