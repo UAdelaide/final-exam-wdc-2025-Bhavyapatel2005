@@ -81,7 +81,7 @@ async function seedData() {
   }
 }
 
-// ✅ ROUTES (always registered, no DB dependency to bind)
+// 
 app.get('/', (req, res) => {
   res.send('Root OK');
 });
