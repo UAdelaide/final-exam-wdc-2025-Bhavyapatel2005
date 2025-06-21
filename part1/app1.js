@@ -135,12 +135,12 @@ app.get('/api/walkers/summary', async (req, res) => {
   }
 });
 
-// start the server on local host and display on which port my server is running 
+// start the server on local host and display on which port my server is running
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// ✅ Run DB + seed async
+// Debugging 
 (async () => {
   try {
     await connectDB();
