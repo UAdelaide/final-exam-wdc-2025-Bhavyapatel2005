@@ -133,6 +133,11 @@ app.get('/api/walkers/summary', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send('Root OK');
+});
+
+
 // Start server
 async function startServer() {
   try {
