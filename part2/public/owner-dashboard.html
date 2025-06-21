@@ -11,6 +11,9 @@
   <div id="app" class="container py-4">
     <h1 class="mb-4 text-primary">Owner Dashboard</h1>
 
+    <!-- Logout button -->
+    <button type="button" class="btn btn-outline-danger mb-3" @click="logout">Logout</button>
+
     <!-- Walk request form -->
     <div class="card mb-4">
       <div class="card-header bg-primary text-white">
@@ -39,11 +42,9 @@
       </div>
     </div>
 
-    <!-- Success or error messages -->
     <div v-if="message" class="alert alert-info">{{ message }}</div>
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-    <!-- List of walk requests -->
     <h2 class="mb-3">My Walk Requests</h2>
     <div class="row" v-if="walks.length > 0">
       <div class="col-md-6 mb-4" v-for="walk in walks" :key="walk.request_id">
@@ -115,6 +116,15 @@
           }
         }
 
+        async function logout() {
+          try {
+            await fetch('/api/users/logout', { method: 'POST' });
+            window.location.href = 'index.html';
+          } catch (err) {
+            console.error('Logout failed:', err);
+          }
+        }
+
         onMounted(() => {
           loadWalks();
         });
@@ -124,7 +134,8 @@
           walks,
           message,
           error,
-          submitWalkRequest
+          submitWalkRequest,
+          logout
         };
       }
     }).mount('#app');
