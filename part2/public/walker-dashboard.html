@@ -69,10 +69,11 @@
 
         async function applyToWalk(requestId) {
           try {
+            if (!userId.value) throw new Error('User ID not loaded');
             const res = await fetch(`/api/walks/${requestId}/apply`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ walker_id: user })
+              body: JSON.stringify({ walker_id: userId.value })
             });
             const result = await res.json();
 
@@ -96,6 +97,7 @@
         }
 
         onMounted(() => {
+          getCurrentUser();
           loadWalkRequests();
         });
 
@@ -104,7 +106,9 @@
           message,
           error,
           applyToWalk,
-          logout
+          logout,
+          getCurrentUser,
+          userId
         };
       }
     }).mount('#app');
