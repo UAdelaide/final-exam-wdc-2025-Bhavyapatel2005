@@ -114,7 +114,7 @@ app.get('/api/walkrequests/open', async (req, res) => {
   }
 });
 
-//
+// Walker summary route
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -135,7 +135,7 @@ app.get('/api/walkers/summary', async (req, res) => {
   }
 });
 
-// ✅ Start server right away — DB can fail but server runs
+//
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
