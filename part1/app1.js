@@ -114,7 +114,7 @@ app.get('/api/walkrequests/open', async (req, res) => {
   }
 });
 
-// Walker summary route
+// Walker summary route.
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -135,12 +135,12 @@ app.get('/api/walkers/summary', async (req, res) => {
   }
 });
 
-// start the server on local host and display on which port my server is running
+// start the server on local host and display on which port my server is running.
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Debugging 
+// Debugging if any sql related error.
 (async () => {
   try {
     await connectDB();
