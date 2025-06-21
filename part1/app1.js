@@ -5,7 +5,7 @@ const app = express();
 const PORT = 8080;
 let db;
 
-// this is asynchronous 
+// This is asynchronous function to connect to the database
 async function connectDB() {
   db = await mysql.createConnection({
     host: 'localhost',
@@ -15,7 +15,7 @@ async function connectDB() {
   console.log("Connected to MySQL");
 }
 
-// ✅ Seed data
+// Now before inserting the data  clearnign the old 
 async function seedData() {
   try {
     await db.execute(`DELETE FROM WalkRatings`);
