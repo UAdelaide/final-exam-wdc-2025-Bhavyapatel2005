@@ -53,8 +53,8 @@ async function seedData() {
       ((SELECT dog_id FROM Dogs WHERE name = 'Luna'), '2025-06-12 07:30:00', 30, 'Riverside Trail', 'completed'),
       ((SELECT dog_id FROM Dogs WHERE name = 'Cooper'), '2025-06-13 15:00:00', 25, 'Prospect Park', 'completed')
     `);
-    
 
+    // details of 
     await db.execute(`
       INSERT INTO WalkApplications (request_id, walker_id, status) VALUES
       ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Max')),
