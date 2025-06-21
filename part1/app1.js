@@ -81,9 +81,8 @@ async function seedData() {
   }
 }
 
-// 
 app.get('/', (req, res) => {
-  res.send('Root OK');
+  res.send('Welcome to Home page');
 });
 
 app.get('/api/dogs', async (req, res) => {
