@@ -85,6 +85,7 @@ app.get('/', (req, res) => {
   res.send('Welcome to Home page');
 });
 
+// all the routes of the api starting from /dogs
 app.get('/api/dogs', async (req, res) => {
   try {
     const [rows] = await db.execute(`
