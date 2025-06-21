@@ -2,55 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dog Walking Service - Dog of the Day</title>
+  <title>Dog Walking Service — Dog of the Day</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
-    /* Cognitive load fail: too many font sizes + colors */
-    h1 { font-size: 50px; color: red; }
-    h2 { font-size: 30px; color: green; }
-    h3 { font-size: 25px; color: blue; }
-    p { font-size: 20px; color: purple; }
-    .button { font-size: 40px; background-color: yellow; padding: 20px; }
+    /* Cognitive load failure: chaotic visual style */
+    h1 { font-size: 48px; color: orange; }
+    h2 { font-size: 36px; color: pink; }
+    p { font-size: 24px; color: cyan; font-family: cursive; }
+    .btn-large { font-size: 40px; background: lime; padding: 20px; }
+    .btn-tiny { font-size: 8px; padding: 1px 3px; }
 
-    /* Kinematic load fail: tiny click area */
-    .small-button {
-      font-size: 12px;
-      padding: 2px 4px;
-      border: 1px solid black;
-      display: inline-block;
-    }
+    /* Accessibility fail: contrast issues + no focus style */
+    body { background: lightyellow; }
+    button:focus { outline: none; }
+
+    /* Kinematic load fail: small click target */
+    .btn-tiny { border: 1px solid black; }
   </style>
 </head>
 <body>
   <div id="app">
     <h1>DOG WALKING SERVICE</h1>
     <h2>DOG OF THE DAY</h2>
-    <h3>Meet Buddy!</h3>
-    <p>Breed: Super Rare</p>
-    <p>Age: 3 years</p>
-    <img :src="dogImage" alt=" " /> <!-- Accessibility fail: empty alt text -->
 
-    <!-- Cognitive load fail: excessive buttons with unclear purpose -->
+    <img :src="dogImage" alt="" width="400" /> <!-- accessibility fail: empty alt -->
+
+    <p>Name: Sparky</p>
+    <p>Breed: Ultra Rare</p>
+    <p>Age: 2 years</p>
+
     <div>
-      <button class="button" @click="getDog">Get New Dog</button>
-      <button class="button" @click="getDog">Another Button</button>
-      <button class="button" @click="getDog">And Another</button>
-      <button class="small-button" @click="getDog">Tiny Click</button>
+      <!-- Cognitive load fail: multiple buttons, unclear -->
+      <button class="btn-large" @click="getDog">Get Dog</button>
+      <button class="btn-large" @click="getDog">Get Another Dog</button>
+      <button class="btn-large" @click="getDog">Again</button>
+      <button class="btn-tiny" @click="getDog">Tiny</button>
     </div>
 
-    <!-- Accessibility fail: no labels for input -->
-    <input type="text" placeholder="Type here" />
-    <input type="checkbox" /> Agree?
+    <!-- Accessibility fail: unlabeled form elements -->
+    <input type="text" placeholder="Type something here" />
+    <input type="checkbox" /> Check this if you agree
   </div>
 
   <script>
     const { createApp } = Vue;
-
     createApp({
       data() {
         return {
           dogImage: ''
-        };
+        }
       },
       mounted() {
         this.getDog();
@@ -62,7 +62,7 @@
             .then(data => {
               this.dogImage = data.message;
             })
-            .catch(err => console.error('Dog API error:', err));
+            .catch(err => console.error('API error:', err));
         }
       }
     }).mount('#app');
