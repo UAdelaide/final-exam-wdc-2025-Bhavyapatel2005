@@ -24,6 +24,7 @@ async function seedData() {
     await db.execute(`DELETE FROM Dogs`);
     await db.execute(`DELETE FROM Users`);
 
+    // now entering the details of the users
     await db.execute(`
       INSERT INTO Users (username, email, password_hash, role) VALUES
       ('alice123', 'alice@example.com', 'hashed123', 'owner'),
@@ -32,7 +33,7 @@ async function seedData() {
       ('sam36', 'sam@example.com', 'hashed000', 'walker'),
       ('emily99', 'emily@example.com', 'hashed321', 'owner')
     `);
-
+// 
     await db.execute(`
       INSERT INTO Dogs (owner_id, name, size) VALUES
       ((SELECT user_id FROM Users WHERE username = 'alice123'), 'Max', 'medium'),
