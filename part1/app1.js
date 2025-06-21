@@ -5,7 +5,7 @@ const app = express();
 const PORT = 8080;
 let db;
 
-// This is asynchronous function to connect to the database.
+// This is asynchronous function to connect to the database
 async function connectDB() {
   db = await mysql.createConnection({
     host: 'localhost',
@@ -15,7 +15,7 @@ async function connectDB() {
   console.log("Connected to MySQL");
 }
 
-// Now before inserting the data  clearnign the old vales to that there is no conflict.
+// Now before inserting the data  clearnign the old vales to that there is no conflict
 async function seedData() {
   try {
     await db.execute(`DELETE FROM WalkRatings`);
@@ -114,7 +114,7 @@ app.get('/api/walkrequests/open', async (req, res) => {
   }
 });
 
-// Walker summary route.
+// Walker summary route
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -135,12 +135,12 @@ app.get('/api/walkers/summary', async (req, res) => {
   }
 });
 
-// start the server on local host and display on which port my server is running.
+// start the server on local host and display on which port my server is running
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Debugging if any sql related error.
+// Debugging if any sql related error
 (async () => {
   try {
     await connectDB();
