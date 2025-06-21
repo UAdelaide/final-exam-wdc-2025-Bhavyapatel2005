@@ -16,12 +16,12 @@ async function connectDB() {
   console.log("Connected to MySQL");
 }
 
-// Seed test data
+// Seed data
 async function seedData() {
   try {
-    // Clean tables
-    await db.execute(`DELETE FROM WalkApplications`);
+    // Clean tables respecting FK constraints
     await db.execute(`DELETE FROM WalkRatings`);
+    await db.execute(`DELETE FROM WalkApplications`);
     await db.execute(`DELETE FROM WalkRequests`);
     await db.execute(`DELETE FROM Dogs`);
     await db.execute(`DELETE FROM Users`);
@@ -56,22 +56,26 @@ async function seedData() {
       ((SELECT dog_id FROM Dogs WHERE name = 'Cooper'), '2025-06-13 15:00:00', 25, 'Prospect Park', 'completed')
     `);
 
-    // WalkApplications
+    // WalkApplications (statuses match ENUM)
     await db.execute(`
-      INSERT INTO WalkApplications (walker_id, request_id, status) VALUES
-      ((SELECT user_id FROM Users WHERE username = 'bobwalker'),
-       (SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Max')), 'accepted'),
-      ((SELECT user_id FROM Users WHERE username = 'sam36'),
-       (SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Luna')), 'completed'),
-      ((SELECT user_id FROM Users WHERE username = 'bobwalker'),
-       (SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Cooper')), 'completed')
+      INSERT INTO WalkApplications (request_id, walker_id, status) VALUES
+      ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Max')),
+       (SELECT user_id FROM Users WHERE username = 'bobwalker'), 'accepted'),
+      ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Luna')),
+       (SELECT user_id FROM Users WHERE username = 'sam36'), 'accepted'),
+      ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Cooper')),
+       (SELECT user_id FROM Users WHERE username = 'bobwalker'), 'accepted')
     `);
 
     // WalkRatings
     await db.execute(`
-      INSERT INTO WalkRatings (request_id, rating) VALUES
-      ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Luna')), 5),
-      ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Cooper')), 4)
+      INSERT INTO WalkRatings (request_id, walker_id, owner_id, rating, comments) VALUES
+      ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Luna')),
+       (SELECT user_id FROM Users WHERE username = 'sam36'),
+       (SELECT owner_id FROM Dogs WHERE name = 'Luna'), 5, 'Great job'),
+      ((SELECT request_id FROM WalkRequests WHERE dog_id = (SELECT dog_id FROM Dogs WHERE name = 'Cooper')),
+       (SELECT user_id FROM Users WHERE username = 'bobwalker'),
+       (SELECT owner_id FROM Dogs WHERE name = 'Cooper'), 4, 'Good walk')
     `);
 
     console.log("Seed data inserted");
@@ -80,7 +84,8 @@ async function seedData() {
   }
 }
 
-// /api/dogs
+// API endpoints
+
 app.get('/api/dogs', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -94,7 +99,6 @@ app.get('/api/dogs', async (req, res) => {
   }
 });
 
-// /api/walkrequests/open
 app.get('/api/walkrequests/open', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -110,18 +114,17 @@ app.get('/api/walkrequests/open', async (req, res) => {
   }
 });
 
-// /api/walkers/summary
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await db.execute(`
       SELECT u.username AS walker_username,
-             COUNT(DISTINCT wr2.rating_id) AS total_ratings,
-             ROUND(AVG(wr2.rating),1) AS average_rating,
-             COUNT(DISTINCT wr.request_id) AS completed_walks
+             COUNT(DISTINCT wrt.rating_id) AS total_ratings,
+             ROUND(AVG(wrt.rating),1) AS average_rating,
+             COUNT(DISTINCT wrq.request_id) AS completed_walks
       FROM Users u
       LEFT JOIN WalkApplications wa ON u.user_id = wa.walker_id
-      LEFT JOIN WalkRequests wr ON wa.request_id = wr.request_id AND wr.status = 'completed'
-      LEFT JOIN WalkRatings wr2 ON wr.request_id = wr2.request_id
+      LEFT JOIN WalkRequests wrq ON wa.request_id = wrq.request_id AND wrq.status = 'completed'
+      LEFT JOIN WalkRatings wrt ON wrq.request_id = wrt.request_id
       WHERE u.role = 'walker'
       GROUP BY u.username
     `);
@@ -131,7 +134,6 @@ app.get('/api/walkers/summary', async (req, res) => {
   }
 });
 
-// Start server
 async function startServer() {
   try {
     await connectDB();
