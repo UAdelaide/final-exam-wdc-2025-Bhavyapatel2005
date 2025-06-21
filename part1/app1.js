@@ -5,7 +5,7 @@ const app = express();
 const PORT = 8080;
 let db;
 
-// 
+// this is 
 async function connectDB() {
   db = await mysql.createConnection({
     host: 'localhost',
