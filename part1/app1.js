@@ -98,7 +98,7 @@ app.get('/api/dogs', async (req, res) => {
   }
 });
 
-// /WalkRewuests
+// /WalkRewuests/open routes
 app.get('/api/walkrequests/open', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -114,6 +114,7 @@ app.get('/api/walkrequests/open', async (req, res) => {
   }
 });
 
+//
 app.get('/api/walkers/summary', async (req, res) => {
   try {
     const [rows] = await db.execute(`
