@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dog Walking Service - Dog of the Day</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    /* Cognitive load fail: too many font sizes + colors */
+    h1 { font-size: 50px; color: red; }
+    h2 { font-size: 30px; color: green; }
+    h3 { font-size: 25px; color: blue; }
+    p { font-size: 20px; color: purple; }
+    .button { font-size: 40px; background-color: yellow; padding: 20px; }
+
+    /* Kinematic load fail: tiny click area */
+    .small-button {
+      font-size: 12px;
+      padding: 2px 4px;
+      border: 1px solid black;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>DOG WALKING SERVICE</h1>
+    <h2>DOG OF THE DAY</h2>
+    <h3>Meet Buddy!</h3>
+    <p>Breed: Super Rare</p>
+    <p>Age: 3 years</p>
+    <img :src="dogImage" alt="" /> <!-- Accessibility fail: empty alt text -->
+
+    <!-- Cognitive load fail: excessive buttons with unclear purpose -->
+    <div>
+      <button class="button" @click="getDog">Get New Dog</button>
+      <button class="button" @click="getDog">Another Button</button>
+      <button class="button" @click="getDog">And Another</button>
+      <button class="small-button" @click="getDog">Tiny Click</button>
+    </div>
+
+    <!-- Accessibility fail: no labels for input -->
+    <input type="text" placeholder="Type here" />
+    <input type="checkbox" /> Agree?
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          dogImage: ''
+        };
+      },
+      mounted() {
+        this.getDog();
+      },
+      methods: {
+        getDog() {
+          fetch('https://dog.ceo/api/breeds/image/random')
+            .then(res => res.json())
+            .then(data => {
+              this.dogImage = data.message;
+            })
+            .catch(err => console.error('Dog API error:', err));
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
